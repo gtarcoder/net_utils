@@ -6,19 +6,21 @@
 
 #define ETIMED_OUT 0 //for function pthread_cond_timedwait
 
-#define CELL_SIZE 491 //cell size 
+#define CELL_SIZE 900 //cell size 
 
 //the minimum number of cell in queue that can be read by process thread, we set a minimum number to avoid frequently exchanging 
 //double-buffer between write thread and read thread
-#define MIN_READ_CELL_NUM 10
+#define MIN_READ_CELL_NUM 300
 
 //maximum time span between successive read and write ptr exchange, in order to 
 //avoid the read buffer stays empty and write buffer stays not too full to be read (which is caused by MIN_READ_CELL_NUM)
-#define MAX_EXCHANGE_TIME_SPAN 20 //20 seconds
+#define MAX_EXCHANGE_TIME_SPAN 10 //10 seconds
 
 //mutex lock to lock idle_list in receive and process threada, according to result of experiment, use LOCK_IDLE will not cause
 //performance loss obviously, so use it defaultly
+
 #define LOCK_IDLE   
+#define LOCK_EXCHGE
 
 using namespace Mutex;
 
@@ -74,7 +76,7 @@ public:
    void PopAndProcsCell(ProcsCellFunc fp);
 
    void ExchangeRwPtr();
-private:
+//private:
 
     //use double-buffer mechanism to exchange data between receive thread and process thread  
     //in all, we have three std::queue<cell*>(s), a idle_list which contains the post-processed cell, work_list1 and work_list2, contains the received cell.
@@ -110,11 +112,19 @@ private:
     //pointer pointing to the work list being read by process thread
     CellQueuePtr read_list_ptr_;   
 
-   volatile bool read_list_empty_;
-   MutexLock mutex_lock_work_;
-   Condition condition_;
+    volatile bool read_list_empty_;
+
+    MutexLock mutex_lock_work_;
+
+    Condition condition_;
+
 #ifdef LOCK_IDLE
-   MutexLock mutex_lock_idle_;
+    MutexLock mutex_lock_idle_;
+#endif
+
+
+#ifdef LOCK_EXCHGE
+    MutexLock mutex_lock_chgeptr_;
 #endif
 };
 #endif

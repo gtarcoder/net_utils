@@ -1,15 +1,18 @@
 #include<assert.h>
 #include<iostream>
 #include<string.h>
+#include<stdio.h>
 #include"cell_list.h"
 using namespace std;
 
 #ifdef LOCK_WORK
-CellList::CellList():
+CellList::CellList(int num):
 condition_(mutex_lock_work_){
+    Init(num);
 }
 #else
-CellList::CellList(){
+CellList::CellList(int num){
+    Init(num);
 }
 #endif
 
@@ -30,6 +33,10 @@ void CellList::Init(int init_cell_num){
     Cell* cell;
     for(int i = 0; i < init_cell_num; i ++){
         cell = new Cell();
+        if (! cell){
+            printf("allocate cell failed\n");
+            continue;
+        }
         idle_list_.push(cell);
     }
 }
@@ -40,7 +47,11 @@ void CellList::PushPacket(char* packet, int packet_len){
     Cell* cell = PopIdleCell();
 
     if (! cell){ //need to allocate a new Cell
-        cell = new Cell();
+        if (! cell){
+            cell = new Cell();
+            printf("allocate cell failed...\n");
+            return;
+        }
     }
     
     memcpy(cell->cell_data, packet, packet_len);

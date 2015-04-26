@@ -4,9 +4,9 @@
 #include<queue>
 #include"mutex.h"
 
-#define CELL_SIZE 491 //cell size 
+#define CELL_SIZE 900 //cell size 
 
-//#define LOCK_IDLE
+#define LOCK_IDLE
 
 #define LOCK_WORK //use mutex lock for multi-thread operation on queue<Cell*>
 
@@ -37,7 +37,7 @@ typedef void(* ProcsCellFunc)(Cell*);
 
 class CellList{
 public:
-    CellList();
+    CellList(int num = 10000);
     ~CellList();
 
     //initialize cell list by allocating some Cells at beginning of program

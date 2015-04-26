@@ -1,5 +1,6 @@
 #include<assert.h>
 #include<iostream>
+#include<stdlib.h>
 #include<string.h>
 #include<stdio.h>
 #include<errno.h>
@@ -12,6 +13,7 @@ condition_(mutex_lock_work_){
     read_list_ptr_ = &work_list2_;
     read_list_empty_ = true;
 }
+
 DbCellList::~DbCellList(){
     while(! work_list1_.empty()){
         delete work_list1_.front();
@@ -30,6 +32,10 @@ void DbCellList::Init(int init_cell_num){
     Cell* cell;
     for(int i = 0; i < init_cell_num; i ++){
         cell = new Cell();
+        if (! cell){
+            printf("allocate cell failed\n");
+            continue;
+        }
         idle_list_.push(cell);
     }
 }
@@ -37,46 +43,45 @@ void DbCellList::Init(int init_cell_num){
 void DbCellList::PushPacket(char* packet, int packet_len){
     assert(packet_len  <= CELL_SIZE);
     Cell* cell = PopIdleCell();
+
     if (! cell){ //need to allocate a new Cell
-        cell = new Cell();
+        if (! cell){
+            cell = new Cell();
+            printf("allocate cell failed...\n");
+            return;
+        }
     }
     memcpy(cell->cell_data, packet, packet_len);
     cell->data_len = packet_len;
 
-    MutexLockGuard guard(mutex_lock_work_);
+    MutexLockGuard guard1(mutex_lock_work_);
+
+#ifdef LOCK_EXCHGE
+    MutexLockGuard guard2(mutex_lock_chgeptr_);
+#endif
 
     write_list_ptr_->push(cell); 
-
     if (read_list_empty_ && write_list_ptr_->size() > MIN_READ_CELL_NUM){
         condition_.Notify();
     }
-
 }
 
 Cell* DbCellList::PopWorkCell(){
     if (read_list_ptr_->empty()){
-
+		 MutexLockGuard lock_guard1(mutex_lock_work_);
          read_list_empty_ = true;
          while(read_list_empty_){
-            //ATTENTION: not process the case that condition wait is spurious wakeups by strange signals
-            // ATTENTION 
-
-             mutex_lock_work_.Lock();
              if (condition_.WaitTimeOut(MAX_EXCHANGE_TIME_SPAN) == ETIMEDOUT){ //wait for data to timeout, exchange ptr forcely
-
-                //when pthread_cond_wait returned, the mutex is automatically acquired by this thread
-                //so we should unlock the mutex first in case dead-lock when we run into ExchangeRwPtr function
-                mutex_lock_work_.UnLock();
-
                 if (! write_list_ptr_->empty()){
+
+#ifdef LOCK_EXCHGE
+    				MutexLockGuard guard2(mutex_lock_chgeptr_);
+#endif
+
                     ExchangeRwPtr();
-//                    printf("exchange ptr for time out\n");
                 }                                                             
              }else{//else, we receive a notification from write thread that write buffer has enough cell to read(> MIN_READ_CELL_NUM)
-                mutex_lock_work_.UnLock();
-
                 ExchangeRwPtr();
-//                printf("exchange ptr for signal\n");
              }
          }
     }
@@ -87,7 +92,7 @@ Cell* DbCellList::PopWorkCell(){
 }
 
 void DbCellList::ExchangeRwPtr(){
-    MutexLockGuard guard(mutex_lock_work_); //the following swap operation will operate data shared by other thread, so add lock
+
     CellQueuePtr tmp = write_list_ptr_;
     write_list_ptr_ = read_list_ptr_;
     read_list_ptr_ = tmp;
