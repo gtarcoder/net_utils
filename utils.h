@@ -9,6 +9,9 @@
 #include <fstream>
 #include <assert.h>
 #include <pthread.h>
+#include <string>
+#include <sstream>
+
 
 #include <netpacket/packet.h>
 #include <netinet/in.h>
@@ -46,4 +49,19 @@ void GetTime(char* buffer);
 //build socket addr
 
 void BuildSockAddr(const char* ip, const uint16_t port, struct sockaddr_in* sock_addr);
+
+template<typename T>
+std::string Type2String(const T& t){
+    std::ostringstream os;
+    os << t;
+    return os.str();
+}
+
+template<typename T>
+T String2Type(const std::string& str){
+    T result;
+    std::istringstream is(str);
+    is >> result;
+    return result;
+}
 #endif

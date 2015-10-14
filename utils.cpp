@@ -23,10 +23,13 @@ void GetTime(char* buffer){
     strcpy(buffer, asctime(timenow));
 }
 
+//socket function
 void BuildSockAddr(const char* ip, const uint16_t port, struct sockaddr_in* sock_addr){
     memset((char*)sock_addr, 0, sizeof(struct sockaddr_in));
     sock_addr->sin_family = AF_INET;
     sock_addr->sin_port = htons(port);
     sock_addr->sin_addr.s_addr = inet_addr(ip);
 }
+
+
 
