@@ -6,7 +6,7 @@ class TcpSocket:public CommonSocket{
 public:
     TcpSocket();
 
-    ~TcpSocket();
+    virtual ~TcpSocket();
     
     bool Create();
     bool Create(int socket_fd); //build a socket by sockfd, used in server accept a client
@@ -20,11 +20,13 @@ public:
     int SendPacket(char* data, int len);
 
     //when socket fd occurs a read event, call this function to receive data, return value indicates:
-    // ret == -1 : failed to receive
+    // ret < 0: failed to receive(-100, peer disconnect; -1 error happens)
     // ret >= 0, has received ret complete packet(s) and store them in recv_buffer
     // the argument recv_buffer and recved_len can return useful information to the caller, but they are only meaningful when ret >= 1
    
-    //when tcp socket has received 1 or more complete packet and stored them in recv_buffer_, function return the number of the complete packets and copy all complete packets to out_recv_buffer, and update the recv_buffer_(the private member of TcpSocket)
+    //when tcp socket has received 1 or more complete packet and stored them in recv_buffer_,
+    // function return the number of the complete packets and copy all complete packets to out_recv_buffer, 
+    // and update the recv_buffer_(the private member of TcpSocket)
     int RecvPacket(char* recv_buffer,  int* recved_len); 
 
 private:

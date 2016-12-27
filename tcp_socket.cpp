@@ -5,7 +5,7 @@ TcpSocket::TcpSocket(){
 }
 
 TcpSocket::~TcpSocket(){
-
+    Close();
 }
 
 
@@ -56,15 +56,15 @@ bool TcpSocket::Listen(int max_num){
 }
 
 int TcpSocket::SendPacket(char* data, int len){
-    return 0;
+    //send 4 bytes head to indicates the following packet's size
+    uint32_t netorder_len = htonl(len);
+    Send((char*)&netorder_len, 4);
+    Send(data, len);
+    return len;
 }
 
 int TcpSocket::RecvPacket(char* out_recv_buffer, int* recved_len){
-
-    assert(recv_pos_ - recv_buffer_ < TCP_BUF_SIZE);
-
-    int recv_bytes = Recv(recv_pos_, TCP_BUF_SIZE + recv_buffer_ - recv_pos_);
-
+    int recv_bytes = Recv(recv_pos_, (uint64_t)(TCP_BUF_SIZE) + recv_buffer_ - recv_pos_);
     if (recv_bytes == 0){//peer side close the connection
         perror("peer disconnect\n");
         return -1;
@@ -73,29 +73,24 @@ int TcpSocket::RecvPacket(char* out_recv_buffer, int* recved_len){
         perror("tcp receive failed\n");
         return -1;
     }
-    
     //received data
     recv_pos_ += recv_bytes;
-
     int complete_packet_num = 0, complete_packet_bytes = 0, cur_packet_len = 0;
     char* read_pos = recv_buffer_;
-
     const int kHeadLen = 4;
-
-
     while(true){
         if (recv_pos_ - read_pos < kHeadLen){
             break;
         }
-        cur_packet_len = *(int*)read_pos;   //get data length of another packet
-        read_pos += kHeadLen;
-        if(read_pos + cur_packet_len > recv_pos_ ){//not another complete pack
+        cur_packet_len = ntohl(*(uint32_t*)read_pos);   //get data length of another packet
+        if(read_pos + kHeadLen + cur_packet_len > recv_pos_ ){//not another complete pack
             break;
         }
-        read_pos += cur_packet_len;
+        //change the packet_len from net order to host order for caller use
+        *(uint32_t*)read_pos = cur_packet_len;
+        read_pos += kHeadLen + cur_packet_len;
         complete_packet_bytes += (kHeadLen + cur_packet_len);//another complete packet
         complete_packet_num ++;
-        
     }
 
     if (complete_packet_bytes){
@@ -108,6 +103,5 @@ int TcpSocket::RecvPacket(char* out_recv_buffer, int* recved_len){
         memcpy(recv_buffer_, read_pos, left_size);
         recv_pos_ = recv_buffer_ + left_size;
     }
-
     return complete_packet_num;
 }

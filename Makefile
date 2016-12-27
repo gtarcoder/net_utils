@@ -1,14 +1,15 @@
 .PHONY:clean all
 
-EXE = test2
+EXE = libRecvDriver.a
 
-LIBS = pthread 
+LIBS = pthread
 
 LIBS_SEARCH_PATH =
-INCLUDES =
+INCLUDES = 
 
+CPP = g++ 
+CC = ${CPP} -DLINUX -DPTHREAD
 
-CC = g++ #g++ -ggdb3 -O0
 RM = rm -rf
 MKDIR = mkdir -p
 
@@ -47,7 +48,8 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 $(EXE):$(OBJS)
-	$(CC) -o $@ $(filter %.o, $^)	$(LIBS_SEARCH_PATH) $(LIBS) 
+	ar crv $(EXE) $(filter %.o, $^)
+	#$(CC) -o $@ $(filter %.o, $^) 	 $(LIBS_SEARCH_PATH) $(LIBS)
 	
 $(DIR_DEPS)/%.dep: %.cpp
 	@echo "Making $@ ..."
@@ -58,7 +60,8 @@ $(DIR_OBJS)/%.o: %.cpp
 	$(CC) $(INCLUDES) -o $@ -c $(filter %.cpp, $^)  
 
 clean:
-	$(RM) $(DIR_OBJS) $(DIR_DEPS)
-
+	$(RM) $(DIR_BUILD)
+	$(RM) $(EXE)
+	$(RM) *.log
 
 

@@ -2,12 +2,10 @@
 #include"utils.h"
 using namespace std;
 
-#define LOG_TO_CONSOLE
-
+//#define LOG_TO_CONSOLE
 Logger::Logger(){
 
 }
-
 Logger::~Logger(){
     fout_.close();
 }

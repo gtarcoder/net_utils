@@ -1,7 +1,8 @@
 #ifndef MUTEX_H_
 #define MUTEX_H_
-#include<pthread.h>
 
+#ifdef PTHREAD
+#include<pthread.h>
 namespace Mutex{
 class MutexLock{
  public:
@@ -53,4 +54,6 @@ private:
     pthread_cond_t pcond_;
 };
 };
+#endif
+
 #endif
