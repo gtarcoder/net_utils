@@ -8,10 +8,15 @@
 #include <errno.h>
 #include <fstream>
 #include <assert.h>
+
 #ifdef LINUX
 #include <pthread.h>
 #include <netpacket/packet.h>
 #include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <netinet/ether.h>
+
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <linux/if_ether.h>
@@ -20,14 +25,13 @@
 #include <linux/if.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <linux/ip.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <linux/ip.h>
 #include <netpacket/packet.h>
 #include <linux/stddef.h>
 #include <sys/select.h>
 #include <sys/time.h>
+
 typedef  int SockInt;
 #else
 #include<winsock2.h>
@@ -58,4 +62,7 @@ void JoinThread(std::thread&t);
 void GetTime(char* buffer);
 //build socket addr
 void BuildSockAddr(const char* ip, const uint16_t port, struct sockaddr_in* sock_addr);
+
+uint32_t Hex2Dec(char c);
+
 #endif

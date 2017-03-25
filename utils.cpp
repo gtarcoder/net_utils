@@ -47,3 +47,13 @@ void BuildSockAddr(const char* ip, const uint16_t port, struct sockaddr_in* sock
 	sock_addr->sin_addr.s_addr = inet_addr(ip);
 }
 
+uint32_t Hex2Dec(char c){
+    if(c >= '0' && c <= '9')
+      return c - '0';
+    else if(c >= 'a' && c <= 'f')
+      return c - 'a' + 10;
+    else if(c >= 'A' && c <= 'F')
+      return c - 'A' + 10;
+    printf("invalid hex char %c !\n", c);
+    return 0;
+}
