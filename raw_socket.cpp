@@ -147,7 +147,13 @@ int RawSocket::SendEthPack(char* buf, int len, char* dst_mac_str){
 	memcpy(ethHead->ether_shost, m_strSrcMac, MAC_LEN);
 	memcpy(ethHead->ether_dhost, m_strDstMac, MAC_LEN);
 	ethHead->ether_type = htons(ETH_P_IP);
-
+	/*
+	printf("content of ether packet: \n");
+	for(int i = 0; i < len; i ++){
+	    printf("%02X ", (uint8_t)buf[i]);
+	}
+	printf("\n\n");
+	*/
 	int sendBytes = sendto(m_nSockfd, buf, len, 0, (struct sockaddr*)&m_AddrSll, sizeof(sockaddr_ll));
 	if (sendBytes < 0)
 	{
@@ -173,7 +179,8 @@ int RawSocket::SendPack(char* buf, int len, char* dst_mac_str)
 	pos += ETH_HEAD_LEN;
 	memcpy(pos, buf, len);  //将ip包的内容拷贝到以太网帧中
 	pos += len;
-
+	
+	
 	int sendBytes = sendto(m_nSockfd, etherPack, pos - etherPack, 0, (struct sockaddr*)&m_AddrSll, sizeof(sockaddr_ll));
 	if (sendBytes < 0)
 	{
@@ -226,8 +233,9 @@ void RawSocket::SetDstMac(const char* dst_mac_str){
         return;
     } 
     for(int i = 0; i < 6; i ++){
-        uint8_t tmp = (Hex2Dec(dst_mac_str[3*i]) << 8) + Hex2Dec(dst_mac_str[3*i + 1]); 
+        uint8_t tmp = (Hex2Dec(dst_mac_str[3*i]) << 4) + Hex2Dec(dst_mac_str[3*i + 1]); 
         m_strDstMac[i] = tmp;
     }
+
     memcpy(m_AddrSll.sll_addr, m_strDstMac, MAC_LEN);
 }
